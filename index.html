@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alcohol Calculator</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;overflow-x:hidden;font-family:system-ui,sans-serif;transition:.3s;}
+:root{--bg:linear-gradient(120deg,#0f2027,#203a43,#2c5364);--card:rgba(0,0,0,0.35);--text:white;--btn:#00c853;--danger:#ff5252;--panel:rgba(255,255,255,0.12);}
+.light{--bg:linear-gradient(120deg,#e0e0e0,#f5f5f5);--card:white;--text:#000;--panel:#ddd;}
+body{background:var(--bg);color:var(--text);}
+.app{max-width:600px;margin:auto;padding:15px;}
+header{display:flex;justify-content:space-between;align-items:center;font-size:24px;font-weight:700;margin-bottom:10px;flex-wrap:wrap;}
+.theme,#installBtn{padding:6px 12px;border-radius:10px;background:var(--panel);border:none;margin-top:5px;}
+.tabs{display:flex;background:var(--panel);border-radius:12px;overflow:hidden;}
+.tabs button{flex:1;padding:14px;background:none;border:none;font-size:16px;color:var(--text);}
+.tabs button.active{background:var(--card);}
+.panel{display:none;margin-top:15px;}
+.panel.active{display:block;}
+input,select{width:100%;padding:14px;margin:8px 0;border-radius:12px;border:none;font-size:18px;}
+button.calc{width:100%;background:var(--btn);color:white;font-size:18px;padding:14px;border:none;border-radius:12px;margin-top:8px;}
+button.clear{width:100%;background:var(--danger);color:white;font-size:18px;padding:14px;border:none;border-radius:12px;margin-top:8px;}
+.result{opacity:0;transform:scale(.98);transition:.36s;margin-top:12px;background:var(--card);border-radius:12px;padding:15px;font-size:20px;text-align:center;}
+.result.show{opacity:1;transform:scale(1);}
+@media(max-width:480px){input,select{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+ Alcohol Calculator
+ <div>
+  <button class="theme" onclick="toggleTheme()">🌗 Тема</button>
+  <button id="installBtn" style="display:none;">📲 Додати</button>
+ </div>
+</header>
+<div class="tabs">
+<button class="active" onclick="tab(0)">Вода</button>
+<button onclick="tab(1)">Аерометр</button>
+<button onclick="tab(2)">Брага</button>
+</div>
+
+<div class="panel active">
+<input id="c1" type="number" placeholder="Початкова міцність %">
+<input id="v1" type="number" placeholder="Обʼєм, л">
+<input id="c2" type="number" placeholder="Потрібна міцність %">
+<button class="calc" onclick="water()">Розрахувати</button>
+<button class="clear" onclick="clearAll()">Очистити</button>
+<div id="rWater" class="result"></div>
+</div>
+
+<div class="panel">
+<select id="aspType">
+<option value="asp1">АСП-1</option>
+<option value="asp2">АСП-2</option>
+<option value="asp3" selected>АСП-3</option>
+</select>
+<input id="aVal" type="number" placeholder="Показ %">
+<input id="tVal" type="number" placeholder="Температура °C">
+<button class="calc" onclick="calcAero()">Розрахувати</button>
+<button class="clear" onclick="clearAll()">Очистити</button>
+<div id="rAero" class="result"></div>
+</div>
+
+<div class="panel">
+<input id="og" type="number" placeholder="OG">
+<input id="fg" type="number" placeholder="FG">
+<input id="vol" type="number" placeholder="Обʼєм браги, л">
+<button class="calc" onclick="braga()">Розрахувати</button>
+<button class="clear" onclick="clearAll()">Очистити</button>
+<div id="rBraga" class="result"></div>
+</div>
+</div>
+
+<script>
+function tab(i){document.querySelectorAll('.panel').forEach((p,n)=>p.classList.toggle('active',n===i));document.querySelectorAll('.tabs button').forEach((b,n)=>b.classList.toggle('active',n===i));}
+function show(el,txt){el.classList.remove('show');setTimeout(()=>{el.innerHTML=txt;el.classList.add('show');},50);}
+function water(){let c1=+c1.value,v=+v1.value,c2=+c2.value;if(!c1||!v||!c2||c2>=c1)return show(rWater,"Помилка");let f=v*c1/c2;show(rWater,`Додати: ${ (f-v).toFixed(2) } л<br>Кінцевий обʼєм: ${f.toFixed(2)} л`);}
+function calcAero(){let m=+aVal.value,t=+tVal.value;let f=aspType.value=="asp1"?0.015:aspType.value=="asp2"?0.0155:0.0165;let r=m*(1-f*(t-20));show(rAero,"Реальна: "+r.toFixed(2)+" %");}
+function braga(){let O=+og.value,F=+fg.value,V=+vol.value;if(!O||!F||!V||O<=F)return show(rBraga,"Помилка");let abv=(O-F)*0.5083;let a=V*(abv/100);show(rBraga,`ABV: ${abv.toFixed(2)}%<br>Абс: ${a.toFixed(2)}л<br>С40: ${(a/0.4).toFixed(2)}л<br>С43: ${(a/0.43).toFixed(2)}л`);}
+function clearAll(){document.querySelectorAll('input').forEach(i=>i.value='');document.querySelectorAll('.result').forEach(r=>{r.innerHTML='';r.classList.remove('show');});}
+function toggleTheme(){document.body.classList.toggle('light');localStorage.theme=document.body.classList.contains('light')?'light':'dark';}
+if(localStorage.theme==='light')document.body.classList.add('light');
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+let d;const b=document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();d=e;b.style.display='inline-block'});
+b.onclick=async()=>{if(!d)return;d.prompt();await d.userChoice;d=null;b.style.display='none';}
+</script>
+</body></html>
